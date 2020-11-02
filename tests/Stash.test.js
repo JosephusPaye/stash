@@ -265,13 +265,13 @@ test('Stash.clearStale() removes stale items from the stash', async () => {
 
   // Cache two items
   await stash.cache('k1', { maxAge: 1 }, () => 41);
-  await stash.cache('k2', { maxAge: 2 }, () => 42);
+  await stash.cache('k2', { maxAge: 3 }, () => 42);
 
   // Check that the two items were cached
   assert.is(stash.size(), 2);
 
   // Fast forward to expire the first item
-  await fastForward(1);
+  await fastForward(2);
 
   // Clear stale items
   stash.clearStale();
@@ -308,7 +308,7 @@ test('Stash.clear() removes all items from the stash', async () => {
   assert.is(value, 43, "clearStale() doesn't remove non-stale items");
 });
 
-test.only("Stash.cache() indicates whether it's revalidating when calling the producer", async () => {
+test("Stash.cache() indicates whether it's revalidating when calling the producer", async () => {
   const stash = new Stash(new InMemoryStorage());
 
   // 1. Test caching of an initial value
