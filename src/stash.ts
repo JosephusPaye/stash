@@ -8,12 +8,12 @@ export interface Storage<K, V> {
   size(): number;
 
   /**
-   * Check an item is stored with the given key
+   * Check if an item is stored with the given key
    */
   has(key: K): boolean;
 
   /**
-   * Get the value of the item stored with the given key if available, or undefined otherwise
+   * Get the value of the item stored with the given key. Returns the value if found, undefined otherwise.
    */
   get(key: K): CachedValue<V> | undefined;
 
@@ -56,7 +56,7 @@ export interface CachedValue<V> {
   storedAt: number;
 
   /**
-   * How long the item should be in the cache before it's considered stale, in seconds
+   * How long an item should be in the cache before it's considered stale, in seconds
    */
   maxAge: number;
 
@@ -114,18 +114,18 @@ export class InMemoryStorage<K, V> implements Storage<K, V> {
 }
 
 /**
- * A function (possibly async) that produces the value to cache
+ * A function (possibly async) that produces a value to cache
  */
 export type Producer<V> =
   | ((options: { isRevalidating: boolean }) => V)
   | ((options: { isRevalidating: boolean }) => Promise<V>);
 
 /**
- * Options for caching items.
+ * Options for caching items
  */
 export type CacheOptions = {
   /**
-   * How long the item should be in the cache before it's considered stale, in seconds
+   * How long an item should be in the cache before it's considered stale, in seconds
    */
   maxAge?: number;
 
@@ -171,12 +171,13 @@ export class Stash<K, V> {
    * - If no value for the given key is in the cache, the producer is called and the value
    *   it produces is stored in the cache
    *
-   * - If a value for the given key in the cache, one of the following happens:
-   *   - if the cached value has not exceeded `maxAge`, it is returned and the producer
-   *     is not called
-   *   - if the cached value has exceeded `maxAge`, and `staleWhileRevalidate` is set and
-   *     has not been exceeded, then the stale value is returned, and the producer is
-   *     called asynchronously to revalidate (i.e. update) the value
+   * - If a value for the given key is in the cache, one of the following happens:
+   *   - if the value is fresh (e.g. it hasn't exceeded `maxAge`, it is returned and the
+   *     producer is not called
+   *   - if the value is stale and can be revalidated (i.e. it has exceeded `maxAge`
+   *     and `staleWhileRevalidate` is set and has not been exceeded) then the stale
+   *     value is returned, and the producer is called asynchronously to revalidate
+   *     (i.e. update) the value
    */
   async cache(key: K, producer: Producer<V>): Promise<V>;
   async cache(key: K, options: CacheOptions, producer: Producer<V>): Promise<V>;

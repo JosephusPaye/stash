@@ -12,7 +12,7 @@ Stash allows you to wrap an expensive function whose result you want to cache us
 
 The first time `stash.cache()` is called, the producer is called and the value produced is stored in the cache using the provided key. On subsequent calls, the cache is checked to see if there's an existing value for the key that hasn't expired. If there is, that value is returned without calling the producer. If there isn't, the producer is called to produce a new value, which is then cached and returned.
 
-When [stale-while-revalidate](https://tools.ietf.org/html/rfc5861#section-3) is enabled, expired items that haven't exceeded the `staleWhileRevalidate` value are returned immediately, and the producer is called asynchronously to update the value in the cache, for return on subsequent calls. See [Using stale-while-revalidate](#using-stale-while-revalidate)
+When [stale-while-revalidate](https://tools.ietf.org/html/rfc5861#section-3) is enabled, expired items that haven't exceeded the `staleWhileRevalidate` value are returned immediately, and the producer is called asynchronously to update the value in the cache, for return on subsequent calls. See [Using stale-while-revalidate](#using-stale-while-revalidate) for how to use.
 
 Out of the box, Stash provides an in-memory storage for cached items, and you can [provide your own storage](#using-custom-storage).
 
@@ -30,7 +30,7 @@ npm install @josephuspaye/stash --save
 
 ### Basic usage
 
-The following example cache data fetch remotely for up to 5 minutes.
+The following example shows how to cache remotely fetched data for up to 5 minutes.
 
 <details>
 <summary>View example</summary>
@@ -48,17 +48,16 @@ function timeout(interval) {
 
 async function fetchData(url, maxAge) {
   return stash.cache(url, { maxAge }, async () => {
-    console.log('fetching remote data...');
     const response = await fetch(url);
     return response.json();
   });
 }
 
 async function main() {
-  const fiveMinutes = 5 * 50;
+  const fiveMinutes = 5 * 60;
   const url = 'https://swapi.dev/api/people/4/?format=json';
 
-  // On first call, the request will be made, and results will be cached for 5 minutes
+  // On first call, a request will be made and results will be cached for 5 minutes
   const data = await fetchData(url, fiveMinutes);
   console.log({ data });
 
@@ -69,7 +68,7 @@ async function main() {
   // Wait 5 minutes for `maxAge` to expire
   await timeout(fiveMinutes);
 
-  // With the cache expired, the next call will make a request and return fresh data (which will be cached)
+  // With the cache expired, the next call will make a request and return fresh data (which will then be cached)
   const newData = await fetchData(url, fiveMinutes);
   console.log(data !== sameData); // true
 }
@@ -81,7 +80,7 @@ main();
 
 ### Using stale-while-revalidate
 
-The following example cache data fetch remotely for up to 5 minutes, with a subsequent 5 minute window where stale data will be returned from the cache while the data is revalidated (i.e. updated) asynchronously in the background.
+The following example shows how to cache remotely fetched data for up to 5 minutes, with a subsequent 5 minute window where stale data will be returned from the cache while the data is revalidated (i.e. updated) asynchronously in the background.
 
 <details>
 <summary>View example</summary>
@@ -99,7 +98,6 @@ function timeout(interval) {
 
 async function fetchData(url, maxAge, staleWhileRevalidate) {
   return stash.cache(url, { maxAge, staleWhileRevalidate }, async () => {
-    console.log('fetching remote data...');
     const response = await fetch(url);
     return response.json();
   });
@@ -109,11 +107,11 @@ async function main() {
   const fiveMinutes = 5 * 60;
   const url = 'https://swapi.dev/api/people/4/?format=json';
 
-  // On first call, the request is made and the results are cached for 5 minutes
+  // On first call, a request will be made and the results will be cached for 5 minutes
   const data = await fetchData(url, fiveMinutes, fiveMinutes);
   console.log({ data });
 
-  // Subsequent calls in the next 5 minutes are resolved from the cache, without making a request
+  // Subsequent calls in the next 5 minutes will be resolved from the cache, without making a request.
   // Data resolved during this time is considered "fresh".
   const cachedData = await fetchData(url, fiveMinutes, fiveMinutes);
   console.log(data === cachedData); // true
@@ -121,9 +119,9 @@ async function main() {
   // Wait 5 minutes for `maxAge` to expire
   await timeout(fiveMinutes);
 
-  // `maxAge` has be exceeded, making the cached data "stale". Because `staleWhileRevalidate` is set,
-  // the stale data will be resolved from the cache immediately, while a request is made in the
-  // background to update the data in the cache.
+  // `maxAge` has been exceeded, making the cached data "stale". Because `staleWhileRevalidate` is set,
+  // the stale data will be resolved from the cache immediately on the next call, while a request is
+  // made in the background to update the data in the cache.
   const staleData = await fetchData(url, fiveMinutes, fiveMinutes);
   console.log(data === staleData); // true
 
@@ -136,7 +134,7 @@ async function main() {
   await timeout(fiveMinutes * 2);
 
   // After the `staleWhileRevalidate` window expires, the next call will make a request and cache the results
-  // are cached for 5 minutes, just like the very first call above
+  // for 5 minutes, just like the first call in this method above
   const newData = await fetchData(url, fiveMinutes, fiveMinutes);
   console.log(data !== newData); // true
 }
@@ -148,9 +146,9 @@ main();
 
 ### Using custom storage
 
-You can use a custom storage backend to store cache items, by implementing the [Storage interface](#types).
+You can use a custom storage backend to store cached items by implementing the [Storage interface](#types).
 
-The following example shows how to use [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) in a browser to store cached items (note that this is a simple, unoptimized example for illustration only):
+The following example shows how to use [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) in a browser to store cached items. Note that this is a simple, unoptimized example for illustration only.
 
 <details>
 <summary>View example</summary>
@@ -218,7 +216,7 @@ class LocalStorage {
 // Create stash instance with the custom LocalStorage backend
 const stash = new Stash(new LocalStorage());
 
-// use stash as normal
+// use `stash` as normal...
 ```
 
 </details>
@@ -227,28 +225,14 @@ const stash = new Stash(new LocalStorage());
 
 ### `InMemoryStorage` class
 
-In-memory storage backend for the cache. Cached items are stored in a JS [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map), supporting keys and value of any type.
-
-<details>
-<summary>View type</summary>
-
-```ts
-class InMemoryStorage<K, V> implements Storage<K, V> {
-  /**
-   * Create a new in-memory storage backend.
-   */
-  constructor();
-}
-```
-
-</details>
+An in-memory storage backend for the cache. Cached items are stored in a JS [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map), supporting keys and values of any type.
 
 ### `Stash` class
 
 The main Stash class.
 
 <details>
-<summary>View type</summary>
+<summary>View details</summary>
 
 ```ts
 class Stash<K, V> {
@@ -273,12 +257,13 @@ class Stash<K, V> {
    * - If no value for the given key is in the cache, the producer is called and the value
    *   it produces is stored in the cache
    *
-   * - If a value for the given key in the cache, one of the following happens:
-   *   - if the cached value has not exceeded `maxAge`, it is returned and the producer
-   *     is not called
-   *   - if the cached value has exceeded `maxAge`, and `staleWhileRevalidate` is set and
-   *     has not been exceeded, then the stale value is returned, and the producer is
-   *     called asynchronously to revalidate (i.e. update) the value
+   * - If a value for the given key is in the cache, one of the following happens:
+   *   - if the value is fresh (e.g. it hasn't exceeded `maxAge`, it is returned and the
+   *     producer is not called
+   *   - if the value is stale and can be revalidated (i.e. it has exceeded `maxAge`
+   *     and `staleWhileRevalidate` is set and has not been exceeded) then the stale
+   *     value is returned, and the producer is called asynchronously to revalidate
+   *     (i.e. update) the value
    */
   cache(key: K, producer: Producer<V>): Promise<V>;
   cache(key: K, options: CacheOptions, producer: Producer<V>): Promise<V>;
@@ -299,7 +284,7 @@ class Stash<K, V> {
 
 ### Types
 
-The following types are used in the API:
+The following additional types are used in the API:
 
 <details>
 <summary>View types</summary>
@@ -315,12 +300,12 @@ interface Storage<K, V> {
   size(): number;
 
   /**
-   * Check an item is stored with the given key
+   * Check if an item is stored with the given key
    */
   has(key: K): boolean;
 
   /**
-   * Get the value of the item stored with the given key if available, or undefined otherwise
+   * Get the value of the item stored with the given key. Returns the value if found, undefined otherwise.
    */
   get(key: K): CachedValue<V> | undefined;
 
@@ -363,7 +348,7 @@ interface CachedValue<V> {
   storedAt: number;
 
   /**
-   * How long the item should be in the cache before it's considered stale, in seconds
+   * How long an item should be in the cache before it's considered stale, in seconds
    */
   maxAge: number;
 
@@ -374,18 +359,18 @@ interface CachedValue<V> {
 }
 
 /**
- * A function (possibly async) that produces the value to cache
+ * A function (possibly async) that produces a value to cache
  */
 type Producer<V> =
   | ((options: { isRevalidating: boolean }) => V)
   | ((options: { isRevalidating: boolean }) => Promise<V>);
 
 /**
- * Options for caching items.
+ * Options for caching items
  */
 type CacheOptions = {
   /**
-   * How long the item should be in the cache before it's considered stale, in seconds
+   * How long an item should be in the cache before it's considered stale, in seconds
    */
   maxAge?: number;
 
