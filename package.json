@@ -1,6 +1,6 @@
 {
   "name": "@josephuspaye/stash",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A simple cache with configurable storage and support for stale-while-revalidate",
   "main": "dist/stash.js",
   "types": "dist/stash.d.ts",
