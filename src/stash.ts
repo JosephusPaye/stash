@@ -72,6 +72,9 @@ export interface CachedValue<V> {
 export class InMemoryStorage<K, V> implements Storage<K, V> {
   private map: Map<K, CachedValue<V>>;
 
+  /**
+   * Create a new in-memory storage backend.
+   */
   constructor() {
     this.map = new Map<K, CachedValue<V>>();
   }
@@ -139,6 +142,11 @@ export class Stash<K, V> {
   private storage: Storage<K, V>;
   private defaultCacheOptions: Required<CacheOptions>;
 
+  /**
+   * Create a new stash with the given storage and default options. The default
+   * options will be used when `stash.cache()` is called without options.
+   * By default, `maxAge` is 1 hour, and `staleWhileRevalidate` is 0.
+   */
   constructor(
     storage: Storage<K, V>,
     defaultCacheOptions: Required<CacheOptions> = {
