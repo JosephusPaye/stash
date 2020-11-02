@@ -151,7 +151,7 @@ export class Stash<K, V> {
     producer: Producer<V>,
     options: CacheOptions
   ) {
-    const value = await producer({ isRevalidating: false });
+    const value = await producer({ isRevalidating: true });
     this.addToCache(key, value, options);
   }
 

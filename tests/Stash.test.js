@@ -184,6 +184,8 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
   assert.ok(producerCalled, 'producer was called after stale value expired');
 });
 
+// This test is exactly like the one above, except the cache options are specified
+// when the stash is constructed, and not when calling stash.cache()
 test('Stash.cache() uses defaultCacheOptions when cacheOptions is not given', async () => {
   const stash = new Stash(new InMemoryStorage(), {
     maxAge: 1,
@@ -304,6 +306,70 @@ test('Stash.clear() removes all items from the stash', async () => {
   // Check that adding an item again triggers the producer
   const value = await stash.cache('k2', { maxAge: 2 }, () => 43);
   assert.is(value, 43, "clearStale() doesn't remove non-stale items");
+});
+
+test.only("Stash.cache() indicates whether it's revalidating when calling the producer", async () => {
+  const stash = new Stash(new InMemoryStorage());
+
+  // 1. Test caching of an initial value
+  await stash.cache(
+    'k1',
+    { maxAge: 1, staleWhileRevalidate: 1 },
+    ({ isRevalidating }) => {
+      assert.is(
+        isRevalidating,
+        false,
+        'initial call to producer is not revalidating'
+      );
+      return 41;
+    }
+  );
+
+  // Fast forward to expire the value
+  await fastForward(1);
+
+  // 2. Test that the producer is called with `{ isRevalidating: true }` when a new value is produced
+  let producerCalled = false;
+  await stash.cache(
+    'k1',
+    { maxAge: 1, staleWhileRevalidate: 1 },
+    ({ isRevalidating }) => {
+      assert.is(
+        isRevalidating,
+        true,
+        'revalidation calls to producer are marked as revalidating'
+      );
+      producerCalled = true;
+      return 42;
+    }
+  );
+
+  assert.ok(producerCalled, 'producer was called after value expired');
+
+  // Fast forward to exceed the revalidate time window
+  await fastForward(2);
+
+  // 3. Test that the producer is called with `{ isRevalidating: false }` when a new value is produced
+  //    after the revalidation window is expired
+  producerCalled = false;
+  await stash.cache(
+    'k1',
+    { maxAge: 1, staleWhileRevalidate: 1 },
+    ({ isRevalidating }) => {
+      assert.is(
+        isRevalidating,
+        false,
+        'calls to producer after revalidation window are not marked revalidating'
+      );
+      producerCalled = true;
+      return 42;
+    }
+  );
+
+  assert.ok(
+    producerCalled,
+    'producer was called after revalidation window expired'
+  );
 });
 
 test.run();
