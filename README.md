@@ -1,6 +1,6 @@
 # Stash
 
-![Node.js CI](https://github.com/JosephusPaye/stash/workflows/Node.js%20CI/badge.svg)
+![Tests](https://github.com/JosephusPaye/stash/workflows/Tests/badge.svg)
 
 🗃 A simple cache with configurable storage and support for [stale-while-revalidate](https://tools.ietf.org/html/rfc5861#section-3).
 
@@ -8,15 +8,15 @@ This project is part of [#CreateWeekly](https://twitter.com/JosephusPaye/status/
 
 ## How it works
 
-With Stash, you wrap an expensive function whose result you want to cache using `stash.cache()`. The function wrapped is called a producer, and a key is provided to use when caching the produced value.
+Stash allows you to wrap an expensive function whose result you want to cache using `stash.cache()`. The function wrapped is called a producer, and a key is provided to use for caching the produced value.
 
-The first time `stash.cache()` is called, the producer is called, and the value produced is stored in the cache using the provided key. On subsequent calls, the cache is checked to see if there's an existing value that hasn't expired. If there is, that value is returned without calling the producer. If there isn't, the producer is called to produce a new value, which is then cached and returned.
+The first time `stash.cache()` is called, the producer is called and the value produced is stored in the cache using the provided key. On subsequent calls, the cache is checked to see if there's an existing value for the key that hasn't expired. If there is, that value is returned without calling the producer. If there isn't, the producer is called to produce a new value, which is then cached and returned.
 
-When [stale-while-revalidate](https://tools.ietf.org/html/rfc5861#section-3) is enabled, expired items that haven't exceeded the `staleWhileRevalidate` value are returned immediately, and the producer is called asynchronously to update the value in the cache, which is returned on subsequent calls.
+When [stale-while-revalidate](https://tools.ietf.org/html/rfc5861#section-3) is enabled, expired items that haven't exceeded the `staleWhileRevalidate` value are returned immediately, and the producer is called asynchronously to update the value in the cache, for return on subsequent calls. See [Using stale-while-revalidate](#using-stale-while-revalidate)
 
-Out of the box, Stash provides an in-memory storage for cache items. It also allows you to [provide your own storage](#using-custom-storage).
+Out of the box, Stash provides an in-memory storage for cached items, and you can [provide your own storage](#using-custom-storage).
 
-The cache is updated only on demand, and stale items are not cleared automatically. You can call [`stash.clearStale()`](#stashclearstale) at an interval you choose to periodically remove stale items.
+The cache is updated only on demand, and stale items are not removed automatically. You can call `stash.clearStale()` periodically at an interval you choose to remove stale items.
 
 See [Usage](#usage) for examples, and [API](#api) for details.
 
@@ -31,6 +31,9 @@ npm install @josephuspaye/stash --save
 ### Basic usage
 
 The following example cache data fetch remotely for up to 5 minutes.
+
+<details>
+<summary>View example</summary>
 
 ```js
 import { Stash, InMemoryStorage } from '@josephuspaye/stash';
@@ -74,9 +77,14 @@ async function main() {
 main();
 ```
 
+</details>
+
 ### Using stale-while-revalidate
 
 The following example cache data fetch remotely for up to 5 minutes, with a subsequent 5 minute window where stale data will be returned from the cache while the data is revalidated (i.e. updated) asynchronously in the background.
+
+<details>
+<summary>View example</summary>
 
 ```js
 import { Stash, InMemoryStorage } from '@josephuspaye/stash';
@@ -136,11 +144,16 @@ async function main() {
 main();
 ```
 
+</details>
+
 ### Using custom storage
 
 You can use a custom storage backend to store cache items, by implementing the [Storage interface](#types).
 
 The following example shows how to use [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) in a browser to store cached items (note that this is a simple, unoptimized example for illustration only):
+
+<details>
+<summary>View example</summary>
 
 ```js
 import { Stash, InMemoryStorage } from '@josephuspaye/stash';
@@ -208,18 +221,37 @@ const stash = new Stash(new LocalStorage());
 // use stash as normal
 ```
 
+</details>
+
 ## API
 
-### `InMemoryStorage`
+### `InMemoryStorage` class
 
 In-memory storage backend for the cache. Cached items are stored in a JS [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map), supporting keys and value of any type.
 
-### `Stash`
+<details>
+<summary>View type</summary>
+
+```ts
+class InMemoryStorage<K, V> implements Storage<K, V> {
+  /**
+   * Create a new in-memory storage backend.
+   */
+  constructor();
+}
+```
+
+</details>
+
+### `Stash` class
 
 The main Stash class.
 
+<details>
+<summary>View type</summary>
+
 ```ts
-export declare class Stash<K, V> {
+class Stash<K, V> {
   /**
    * Create a new stash with the given storage and default options. The default
    * options will be used when `stash.cache()` is called without options.
@@ -263,9 +295,14 @@ export declare class Stash<K, V> {
 }
 ```
 
+</details>
+
 ### Types
 
 The following types are used in the API:
+
+<details>
+<summary>View types</summary>
 
 ```ts
 /**
@@ -358,6 +395,8 @@ type CacheOptions = {
   staleWhileRevalidate?: number;
 };
 ```
+
+</details>
 
 ## Licence
 
