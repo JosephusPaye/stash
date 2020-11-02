@@ -5,27 +5,27 @@ export interface Storage<K, V> {
   /**
    * Get the number of items stored
    */
-  size(): number;
+  size(): Promise<number>;
 
   /**
    * Check if an item is stored with the given key
    */
-  has(key: K): boolean;
+  has(key: K): Promise<boolean>;
 
   /**
    * Get the value of the item stored with the given key. Returns the value if found, undefined otherwise.
    */
-  get(key: K): CachedValue<V> | undefined;
+  get(key: K): Promise<CachedValue<V> | undefined>;
 
   /**
    * Store the given value with the given key
    */
-  set(key: K, cached: CachedValue<V>): this;
+  set(key: K, cached: CachedValue<V>): Promise<void>;
 
   /**
    * Delete the item with the given key. Returns true if an item was found and deleted, false otherwise.
    */
-  delete(key: K): boolean;
+  delete(key: K): Promise<boolean>;
 
   /**
    * Delete all items that match with the given matcher
@@ -33,12 +33,14 @@ export interface Storage<K, V> {
    * @param matcher A matcher that takes the key and value of an item and returns true if the item
    *                should be deleted, and false otherwise
    */
-  clearMatching(matcher: (key: K, cached: CachedValue<V>) => boolean): void;
+  clearMatching(
+    matcher: (key: K, cached: CachedValue<V>) => boolean
+  ): Promise<void>;
 
   /**
    * Delete all items in storage
    */
-  clear(): void;
+  clear(): Promise<void>;
 }
 
 /**
@@ -79,28 +81,27 @@ export class InMemoryStorage<K, V> implements Storage<K, V> {
     this.map = new Map<K, CachedValue<V>>();
   }
 
-  size() {
+  async size() {
     return this.map.size;
   }
 
-  has(key: K) {
+  async has(key: K) {
     return this.map.has(key);
   }
 
-  get(key: K) {
+  async get(key: K) {
     return this.map.get(key);
   }
 
-  set(key: K, cached: CachedValue<V>) {
+  async set(key: K, cached: CachedValue<V>) {
     this.map.set(key, cached);
-    return this;
   }
 
-  delete(key: K) {
+  async delete(key: K) {
     return this.map.delete(key);
   }
 
-  clearMatching(matcher: (key: K, cached: CachedValue<V>) => boolean) {
+  async clearMatching(matcher: (key: K, cached: CachedValue<V>) => boolean) {
     for (const [key, cached] of this.map.entries()) {
       if (matcher(key, cached)) {
         this.map.delete(key);
@@ -108,7 +109,7 @@ export class InMemoryStorage<K, V> implements Storage<K, V> {
     }
   }
 
-  clear() {
+  async clear() {
     this.map.clear();
   }
 }
@@ -200,8 +201,8 @@ export class Stash<K, V> {
     const options =
       typeof producerOrOptions === 'object' ? producerOrOptions : {};
 
-    if (this.storage.has(key)) {
-      const cached = this.storage.get(key)!;
+    if (await this.storage.has(key)) {
+      const cached = (await this.storage.get(key))!;
 
       if (this.isFresh(cached)) {
         return cached.value;
@@ -215,7 +216,7 @@ export class Stash<K, V> {
 
     const value = await producer({ isRevalidating: false });
 
-    this.addToCache(key, value, options);
+    await this.addToCache(key, value, options);
 
     return value;
   }
@@ -224,7 +225,7 @@ export class Stash<K, V> {
    * Clear all stale items in the cache
    */
   clearStale() {
-    this.storage.clearMatching((key, cached) => {
+    return this.storage.clearMatching((key, cached) => {
       return this.isFresh(cached) === false;
     });
   }
@@ -233,7 +234,7 @@ export class Stash<K, V> {
    * Clear all items in the cache
    */
   clear() {
-    this.storage.clear();
+    return this.storage.clear();
   }
 
   /**
@@ -269,14 +270,14 @@ export class Stash<K, V> {
   /**
    * Add the given value to the cache with the given key
    */
-  private addToCache(key: K, value: V, options: CacheOptions) {
+  private async addToCache(key: K, value: V, options: CacheOptions) {
     const { maxAge, staleWhileRevalidate } = Object.assign(
       {},
       this.defaultCacheOptions,
       options
     );
 
-    this.storage.set(key, {
+    return this.storage.set(key, {
       value,
       maxAge,
       staleWhileRevalidate,

@@ -1,3 +1,5 @@
+// @ts-check
+
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 
@@ -12,18 +14,18 @@ function fastForward(interval) {
 test('Stash.size() retrives the number of items cached in the stash', async () => {
   const stash = new Stash(new InMemoryStorage());
 
-  assert.is(stash.size(), 0, 'initial size of stash is 0');
+  assert.is(await stash.size(), 0, 'initial size of stash is 0');
 
   await stash.cache('k1', () => 41);
   await stash.cache('k2', () => 42);
   await stash.cache('k3', () => 43);
 
-  assert.is(stash.size(), 3, 'size() returns the expected size');
+  assert.is(await stash.size(), 3, 'size() returns the expected size');
 
-  stash.clear();
+  await stash.clear();
 
   assert.is(
-    stash.size(),
+    await stash.size(),
     0,
     'size() returns the expected size after clearing items'
   );
@@ -33,6 +35,7 @@ test('Stash.cache() throws when called without a producer', async () => {
   const stash = new Stash(new InMemoryStorage());
 
   try {
+    // @ts-expect-error
     await stash.cache('k1');
     assert.ok(false, 'did not throw for missing producer');
   } catch (err) {
@@ -40,6 +43,7 @@ test('Stash.cache() throws when called without a producer', async () => {
   }
 
   try {
+    // @ts-expect-error
     await stash.cache('k1', {});
     assert.ok(false, 'did not throw for missing producer');
   } catch (err) {
@@ -47,6 +51,7 @@ test('Stash.cache() throws when called without a producer', async () => {
   }
 
   try {
+    // @ts-expect-error
     await stash.cache('k1', {}, {});
     assert.ok(false, 'did not throw for missing producer');
   } catch (err) {
@@ -268,16 +273,16 @@ test('Stash.clearStale() removes stale items from the stash', async () => {
   await stash.cache('k2', { maxAge: 3 }, () => 42);
 
   // Check that the two items were cached
-  assert.is(stash.size(), 2);
+  assert.is(await stash.size(), 2);
 
   // Fast forward to expire the first item
   await fastForward(2);
 
   // Clear stale items
-  stash.clearStale();
+  await stash.clearStale();
 
   // Check that there's only one item left in the cache
-  assert.is(stash.size(), 1);
+  assert.is(await stash.size(), 1);
 
   // Check that the right item remained
   const value = await stash.cache('k2', { maxAge: 2 }, () => {
@@ -295,13 +300,13 @@ test('Stash.clear() removes all items from the stash', async () => {
   await stash.cache('k2', { maxAge: 2 }, () => 42);
 
   // Check that the two items were cached
-  assert.is(stash.size(), 2);
+  assert.is(await stash.size(), 2);
 
   // Clear all items
-  stash.clear();
+  await stash.clear();
 
   // Check that all items were cleared from the cache
-  assert.is(stash.size(), 0);
+  assert.is(await stash.size(), 0);
 
   // Check that adding an item again triggers the producer
   const value = await stash.cache('k2', { maxAge: 2 }, () => 43);
