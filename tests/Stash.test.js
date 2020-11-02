@@ -100,7 +100,7 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
   let producer = () => 41;
   let value = await stash.cache(
     'k1',
-    { maxAge: 1, staleWhileRevalidate: 1 },
+    { maxAge: 1, staleWhileRevalidate: 2 },
     producer
   );
   assert.is(value, 41, 'cache() returns the produced value');
@@ -115,7 +115,7 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
     try {
       value = await stash.cache(
         'k1',
-        { maxAge: 1, staleWhileRevalidate: 1 },
+        { maxAge: 1, staleWhileRevalidate: 2 },
         producer
       );
       assert.is(value, 41, 'cache() returns the cached value');
@@ -133,7 +133,7 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
   try {
     value = await stash.cache(
       'k1',
-      { maxAge: 1, staleWhileRevalidate: 1 },
+      { maxAge: 1, staleWhileRevalidate: 2 },
       producer
     );
     assert.is(value, 41, 'cache() returns the stale value');
@@ -153,7 +153,7 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
   try {
     value = await stash.cache(
       'k1',
-      { maxAge: 1, staleWhileRevalidate: 1 },
+      { maxAge: 1, staleWhileRevalidate: 2 },
       producer
     );
     assert.is(value, 42, 'cache() returns the revalidated value');
@@ -165,7 +165,7 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
   }
 
   // Fast forward to exceed the revalidate time window
-  await fastForward(2);
+  await fastForward(3);
 
   // 5. Test that the expired stale value is not returned, instead a new value is produced
   let producerCalled = false;
@@ -176,7 +176,7 @@ test('Stash.cache() supports stale-while-revalidate', async () => {
 
   value = await stash.cache(
     'k1',
-    { maxAge: 1, staleWhileRevalidate: 1 },
+    { maxAge: 1, staleWhileRevalidate: 2 },
     producer
   );
   assert.is(value, 43, 'cache() returns the produced value');
