@@ -1,0 +1,34 @@
+{
+  "name": "@josephuspaye/stash",
+  "version": "0.0.0",
+  "description": "A simple cache with support for stale-while-revalidate and configurable storage.",
+  "main": "dist/stash.js",
+  "types": "dist/stash.d.ts",
+  "repository": "https://github.com/JosephusPaye/stash.git",
+  "author": "Josephus Paye II",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "uvu -r esm tests/",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.js\" \"*.{js,json,md}\"",
+    "format:check": "prettier --list-different \"src/**/*.ts\" \"tests/**/*.js\" \"*.{js,json,md}\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "esm": "^3.2.25",
+    "prettier": "^2.1.2",
+    "typescript": "^4.0.3",
+    "uvu": "^0.3.4"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "useTabs": false,
+    "singleQuote": true
+  }
+}
